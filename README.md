@@ -79,9 +79,12 @@ void loop()
 }
 ```
 
-## Arduino Blockly Version
+## Arduino Blockly IDE Version
+
+[blockly file](/docs/files/bt-rgb-led.xml)
+
+[Arduino Blockly IDE](https://github.com/phptuts/ArduinoBlocklyIDE)
 
 ![blockly version](/docs/images/blockly-version.png)
 
-[blockly file](/docs/files/bt-rgb-led.xml)
 
