@@ -18,7 +18,7 @@
 
 The Android must be paired with the Arduino before using the app.  This can be done in the settings.
 
-1) Android will send a message to the Arduino that looks like this 30-0-50|.  Each number represent a color.  30 = red, 0 = green, and 50 = 0 blue.  The "|" is used to tell the Arduino to stop reading data.
+1) Android will send a message to the Arduino that looks like this 30-0-50\|.  Each number represent a color.  30 = red, 0 = green, and 50 = 0 blue.  The "\|" is used to tell the Arduino to stop reading data.
 
 2) Once this message is received by the Bluetooth device, it is passed to the Arduino.
 
