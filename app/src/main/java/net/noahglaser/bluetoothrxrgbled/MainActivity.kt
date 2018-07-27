@@ -14,6 +14,8 @@ import android.widget.SeekBar
 import kotlinx.android.synthetic.main.activity_main.*
 import java.io.IOException
 import android.view.MenuItem
+import android.content.Intent
+import android.net.Uri
 
 
 class MainActivity : PermissionsActivity()  {
@@ -131,6 +133,11 @@ class MainActivity : PermissionsActivity()  {
             R.id.menu_refresh -> {
                 Toast.makeText(applicationContext, "Refreshing Bluetooth", Toast.LENGTH_SHORT).show()
                 if (setupBluetooth()) updateColor()
+                true
+            }
+            R.id.bug_report -> {
+                val browserIntent = Intent("android.intent.action.VIEW", Uri.parse("https://github.com/phptuts/Android-Bluetooth-RBG-LED/issues"))
+                startActivity(browserIntent)
                 true
             }
             else -> super.onOptionsItemSelected(item)
