@@ -1,10 +1,14 @@
 # Android Bluetooth RGB Led
 
-<iframe width="560" height="315" src="https://www.youtube.com/embed/qMKGnqM7hno" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen></iframe>
-
 ## App In Action
 
+<iframe width="560" height="315" src="https://www.youtube.com/embed/qMKGnqM7hno" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen></iframe>
+
 ![Arduino Bluetooth](/docs/images/example.jpg)
+
+## Download the App
+
+[Bluetooth Arduino RGB LED App](https://play.google.com/store/apps/details?id=net.noahglaser.bluetoothrxrgbled)
 
 ## Bill of Materials
 
