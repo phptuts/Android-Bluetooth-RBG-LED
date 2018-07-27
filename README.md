@@ -2,6 +2,10 @@
 
 <iframe width="560" height="315" src="https://www.youtube.com/embed/qMKGnqM7hno" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen></iframe>
 
+## App In Action
+
+![Arduino Bluetooth](/docs/images/example.jpg)
+
 ## Bill of Materials
 
 - 1 x Arduino with USB Cord
