@@ -71,5 +71,5 @@ void loop()
 
 ![blockly version](/docs/images/blockly-version.png)
 
-![blockly file](/docs/files/bt-rgb-led.xml)
+[blockly file](/docs/files/bt-rgb-led.xml)
 
