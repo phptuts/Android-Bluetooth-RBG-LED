@@ -1,49 +1,94 @@
 package net.noahglaser.bluetoothrxrgbled
 
 import android.Manifest
+import android.bluetooth.*
+import android.content.Context
 import android.os.Bundle
+import android.support.v7.widget.DividerItemDecoration
+import android.support.v7.widget.LinearLayoutManager
 import android.util.Log
 import android.widget.Toast
 import io.vrinda.kotlinpermissions.PermissionCallBack
-import io.vrinda.kotlinpermissions.PermissionsActivity
-import android.bluetooth.BluetoothAdapter
-import android.bluetooth.BluetoothSocket
-import android.graphics.Color
-import android.view.Menu
-import android.widget.SeekBar
 import kotlinx.android.synthetic.main.activity_main.*
-import java.io.IOException
-import android.view.MenuItem
+import kotlin.system.measureNanoTime
+import android.bluetooth.BluetoothDevice
 import android.content.Intent
+import android.content.BroadcastReceiver
+import android.content.IntentFilter
 import android.net.Uri
+import android.view.Menu
+import android.view.MenuItem
+import java.util.*
 
 
-class MainActivity : PermissionsActivity()  {
+class MainActivity : AbstractMenuActivity() {
 
-    val STATUS_CONNECTTING = "Status: Connecting..."
+    private val TAG = MainActivity::class.java.simpleName
 
-    val STATUS_DISCONNECTED = "Status: Disconnected"
+    private lateinit var btAdapter: BluetoothAdapter
 
-    val STATUS_CONNECTTED = "Status: Connected"
+    private var blueToothDeviceList = mutableListOf<BluetoothDevice>()
 
-    var mBluetoothAdapter: BluetoothAdapter? = null
+    private var socket: BluetoothSocket? = null
 
-    var socket: BluetoothSocket? = null
+    private val appUuid = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB")
+
+    private val btFoundListener = object : BroadcastReceiver() {
+        override fun onReceive(context: Context, intent: Intent) {
+
+            Log.d(TAG, "FOUND BLUETOOTH")
+
+            val device = intent.getParcelableExtra<BluetoothDevice>(BluetoothDevice.EXTRA_DEVICE)
+            if (device.name != null && !blueToothDeviceList.any { it.name == device.name }) {
+                blueToothDeviceList.add(device)
+                rv_bluetooth_list.adapter.notifyDataSetChanged()
+                return
+            }
+        }
+    }
+
+    private val btStateChangeListener = object : BroadcastReceiver() {
+
+        override fun onReceive(context: Context?, intent: Intent) {
+
+            Log.d(TAG, "BLUE TOOTH STATE CHANGED")
+            val device = intent.getParcelableExtra<BluetoothDevice>(BluetoothDevice.EXTRA_DEVICE)
+
+            if (device.bondState == BluetoothDevice.BOND_BONDED) {
+                createConnectedSocket(device)
+            }
+        }
+    }
+
+    private val btScanCompleteListener = object : BroadcastReceiver() {
+        override fun onReceive(context: Context?, intent: Intent) {
+            tv_status.text = "Status: Scanning Complete"
+        }
+    }
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
-        tv_status.text = STATUS_CONNECTTING
-        progressBarsEnabled(false)
+        (application as App).socket?.close()
+        btAdapter = BluetoothAdapter.getDefaultAdapter()
+        rv_bluetooth_list.layoutManager = LinearLayoutManager(applicationContext)
+        rv_bluetooth_list.addItemDecoration(DividerItemDecoration(rv_bluetooth_list.context, DividerItemDecoration.VERTICAL))
+        rv_bluetooth_list.adapter = BleRecyclerAdapter(blueToothDeviceList, {
+            tv_status.text = "Status: Connecting..."
+            socket?.close()
+            btAdapter.cancelDiscovery()
+            if (it.bondState != BluetoothDevice.BOND_BONDED) {
+                it.createBond()
+                return@BleRecyclerAdapter
+            }
+            createConnectedSocket(it)
+        })
 
         requestPermissions(Manifest.permission.ACCESS_COARSE_LOCATION, object : PermissionCallBack {
             override fun permissionGranted() {
                 super.permissionGranted()
-                if (!setupBluetooth()) {
-                    Toast.makeText(applicationContext, "Please make sure your bluetooth is connected and paired.", Toast.LENGTH_LONG).show()
-                    return
-                }
-                updateColor()
+                refreshBluetoothList()
             }
 
             override fun permissionDenied() {
@@ -51,113 +96,50 @@ class MainActivity : PermissionsActivity()  {
                 Toast.makeText(applicationContext, "Can't use bluetooth with location permission, ask google?", Toast.LENGTH_LONG).show()
             }
         })
-
-        val listener = object: SeekBar.OnSeekBarChangeListener{
-            override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
-                updateColor()
-            }
-
-            override fun onStartTrackingTouch(seekBar: SeekBar?) {
-            }
-
-            override fun onStopTrackingTouch(seekBar: SeekBar?) {
-            }
-        }
-
-        sb_blue.setOnSeekBarChangeListener(listener)
-        sb_green.setOnSeekBarChangeListener(listener)
-        sb_red.setOnSeekBarChangeListener(listener)
-
     }
 
-    /**
-     * This function tries to open a connection between the phone and the bluetooth
-     * It returns true if successful
-     */
-    fun setupBluetooth(): Boolean {
-        mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter()
-        mBluetoothAdapter.let {
-            val device = mBluetoothAdapter?.bondedDevices?.first()
-            val uuid = device?.uuids?.first()?.uuid
-            socket = device?.createRfcommSocketToServiceRecord(uuid)
-            return try {
+    fun createConnectedSocket(btDevice: BluetoothDevice)
+    {
+
+        socket = btDevice.createInsecureRfcommSocketToServiceRecord(appUuid)
+        val time = measureNanoTime {
+            try {
                 socket?.connect()
-                progressBarsEnabled(true)
-                tv_status.text = STATUS_CONNECTTED
-                true
-            } catch (e: IOException) {
-                Log.d("setupBluetooth", e.message)
-                progressBarsEnabled(false)
-                tv_status.text = STATUS_DISCONNECTED
-                false
+                (application as App).setBTSocket(socket as BluetoothSocket)
+                startActivity(Intent(applicationContext, ColorActivity::class.java))
+            } catch (e: Exception) {
+                tv_status.text = "Status: Connection Failed"
+                Log.d(TAG, "SOCKET ERROR : ${e.message}")
+                socket?.close()
+                Toast.makeText(applicationContext, "Error connecting, please sure everything is paired.", Toast.LENGTH_LONG).show()
             }
         }
+        Log.d(TAG, time.toString())
     }
 
-    /**
-     * Sends a color message to the bluetooth device
-     * Update the background color and the color text
-     * If it can't send a message it tries to set up a connection again
-     */
-    fun updateColor() {
 
-        val message = "${sb_red.progress}-${sb_green.progress}-${sb_blue.progress}|"
-        val hexColor = "#" + sb_red.progress.getHexColor() +
-                sb_green.progress.getHexColor() +
-                sb_blue.progress.getHexColor()
-        try {
-            socket?.outputStream?.write(message.toByteArray())
-            main_layout.setBackgroundColor(Color.parseColor(hexColor))
-            tv_hex_color.text = "Hex Color: $hexColor"
-        } catch (e: IOException) {
-            tv_status.text = STATUS_CONNECTTING
-            Toast.makeText(applicationContext, "Bluetooth Disconnected, Trying to re establish connection", Toast.LENGTH_LONG).show()
-            setupBluetooth()
-        }
+    fun refreshBluetoothList() {
+
+        btAdapter.cancelDiscovery()
+
+        val actionFoundFilter = IntentFilter(BluetoothDevice.ACTION_FOUND)
+        val actionBondStateChangeFilter = IntentFilter(BluetoothDevice.ACTION_BOND_STATE_CHANGED)
+        val actionScanComleteFilter = IntentFilter(BluetoothAdapter.ACTION_DISCOVERY_FINISHED)
+
+        registerReceiver(btFoundListener, actionFoundFilter)
+        registerReceiver(btStateChangeListener, actionBondStateChangeFilter)
+        registerReceiver(btScanCompleteListener,actionScanComleteFilter )
+
+        blueToothDeviceList.clear()
+        rv_bluetooth_list.adapter.notifyDataSetChanged()
+
+        btAdapter.startDiscovery()
+        tv_status.text = "Status: Scanning..."
     }
 
-    /**
-     * In ables and disables the progress bar
-     */
-    private fun progressBarsEnabled(enabled: Boolean) {
-        sb_blue.isEnabled = enabled
-        sb_green.isEnabled = enabled
-        sb_red.isEnabled = enabled
+    override fun onDestroy() {
+        super.onDestroy()
+        unregisterReceiver(btFoundListener)
+        unregisterReceiver(btStateChangeListener)
     }
-
-    /**
-     * Event listener for when the Menu Option is clicked
-     */
-    override fun onOptionsItemSelected(item: MenuItem): Boolean {
-        return when (item.itemId) {
-            R.id.menu_refresh -> {
-                Toast.makeText(applicationContext, "Refreshing Bluetooth", Toast.LENGTH_SHORT).show()
-                if (setupBluetooth()) updateColor()
-                true
-            }
-            R.id.bug_report -> {
-                val browserIntent = Intent("android.intent.action.VIEW", Uri.parse("https://github.com/phptuts/Android-Bluetooth-RBG-LED/issues"))
-                startActivity(browserIntent)
-                true
-            }
-            else -> super.onOptionsItemSelected(item)
-        }
-    }
-
-    /**
-     * Boiler plate code that attaches the menu
-     */
-    override fun onCreateOptionsMenu(menu: Menu): Boolean {
-        // Inflate the menu to use in the action bar
-        val inflater = menuInflater
-        inflater.inflate(R.menu.menu_layout, menu)
-        return super.onCreateOptionsMenu(menu)
-    }
-}
-
-
-fun Int.getHexColor(): String {
-    var hexInit = this.toString(16)
-    hexInit += if (hexInit.length == 1)   "0" else ""
-    return hexInit.toUpperCase()
 }
