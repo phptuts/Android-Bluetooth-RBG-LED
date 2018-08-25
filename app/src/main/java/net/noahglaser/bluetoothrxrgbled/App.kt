@@ -7,7 +7,6 @@ class App: Application() {
 
     var socket: BluetoothSocket? = null
 
-
     fun getBTSocket(): BluetoothSocket {
         if (socket == null) {
             throw Exception("No Socket Found")
@@ -19,6 +18,4 @@ class App: Application() {
     fun setBTSocket(socketBt: BluetoothSocket) {
         socket = socketBt
     }
-
-
 }

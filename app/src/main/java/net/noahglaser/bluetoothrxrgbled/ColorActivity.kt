@@ -1,6 +1,5 @@
 package net.noahglaser.bluetoothrxrgbled
 
-import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothDevice
 import android.os.Bundle
 import android.widget.Toast
@@ -23,14 +22,23 @@ class ColorActivity : AbstractMenuActivity() {
 
     lateinit var socket: BluetoothSocket
 
+    /**
+     * This listener is for disconnection
+     */
     private val disconnectedListener = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent) {
+
             if (sb_blue.isEnabled) {
+                // This done because we might receive multiple disconnect
+                // messages and we only want to disable the app once
                 disableApp()
             }
         }
     }
 
+    /**
+     * Sets all listeners for bluetooth and process bars
+     */
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_color)
@@ -55,6 +63,9 @@ class ColorActivity : AbstractMenuActivity() {
         sb_red.setOnSeekBarChangeListener(listener)
     }
 
+    /**
+     * For the reconnect btn takes them back to the Main Activity
+     */
     fun reconnect(v: View) {
         startActivity(Intent(applicationContext, MainActivity::class.java))
     }
@@ -73,7 +84,7 @@ class ColorActivity : AbstractMenuActivity() {
                 sb_blue.progress.getHexColor()
 
         main_layout.setBackgroundColor(Color.parseColor(hexColor))
-        tv_hex_color.text = "Hex Color: $hexColor"
+        tv_hex_color.text = getString(R.string.COLOR_HEX_DISPLAY, hexColor)
 
         try {
             socket.outputStream.write(message.toByteArray())
@@ -82,19 +93,25 @@ class ColorActivity : AbstractMenuActivity() {
         }
     }
 
+    /**
+     * Run when bluetooth is disconnected
+     */
     fun disableApp() {
-        Toast.makeText(applicationContext, "Bluetooth Disconnected, Trying to re establish connection", Toast.LENGTH_LONG).show()
+        Toast.makeText(applicationContext, "Bluetooth Disconnected, Trying to reestablish connection", Toast.LENGTH_LONG).show()
         progressBarsEnabled(false)
     }
 
-    override fun onBackPressed() {
+
+
+    /**
+     * Done to make sure the connection does not persist if the person leaves the activity
+     */
+    override fun onStop() {
+        super.onStop()
+        unregisterReceiver(disconnectedListener)
         socket.close()
     }
 
-    override fun onDestroy() {
-        super.onDestroy()
-        socket.close()
-    }
 
     /**
      * In ables and disables the progress bar
@@ -108,7 +125,12 @@ class ColorActivity : AbstractMenuActivity() {
 
 }
 
-
+/**
+ * Converts a number to a hex number with a 0 at the end
+ * Examples 9 -> 09
+ * Example 17 -> 11
+ * Example 10 -> 0A
+ */
 fun Int.getHexColor(): String {
     var hexInit = this.toString(16)
     hexInit += if (hexInit.length == 1) "0" else ""

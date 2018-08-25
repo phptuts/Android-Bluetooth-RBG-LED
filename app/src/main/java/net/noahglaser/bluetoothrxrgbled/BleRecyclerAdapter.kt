@@ -35,11 +35,12 @@ class BleRecyclerAdapter(private val bleDevices: MutableList<BluetoothDevice>, p
     override fun getItemCount() = bleDevices.size
 }
 
+/**
+ * Takes a long name a bluetooth device might have and filters it down
+ * Example
+ * Noah's Awesome bluetooth device is cool -> Noah's Awesome bluetooth ...
+ */
 fun BluetoothDevice.bleDisplay(): String {
-
-    if (this.name.isNullOrBlank()) {
-        return this.address
-    }
 
     if (this.name.length > 25) {
         return this.name.substring(0, 25) + "..."

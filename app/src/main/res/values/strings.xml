@@ -1,3 +1,18 @@
 <resources>
     <string name="app_name">Bluetooth RBG LED </string>
+    <string name="MAIN_BT_NOT_ENABLED">Status: Bluetooth Not Enabled</string>
+    <string name="MAIN_BT_NOT_AVAILABLE">Status: No Bluetooth</string>
+    <string name="MAIN_BT_DISCOVERY">Status: Scanning…</string>
+    <string name="MAIN_BT_CONNECTING">Status: Connecting…</string>
+    <string name="MAIN_BT_SCAN_COMPLETE">Status: Scanning Complete</string>
+    <string name="MAIN_BT_CONNECTION_FAILED">Status: Connection Failed</string>
+    <string name="MAIN_BT_LIST_TITLE">Bluetooth List</string>
+    <string name="COLOR_TITLE">RBG LED Color</string>
+    <string name="COLOR_RECONNECT_BTN">Reconnect Bluetooth</string>
+    <string name="COLOR_HEX_DISPLAY">Color: %1$s</string>
+    <string name="MAIN_BTN_REFRESH_BLUETOOTH">Refresh Bluetooth</string>
+    <string name="MAIN_ERROR_BT_NOT_ENABLED">Please turn on bluetooth in your setting</string>
+    <string name="MAIN_ERROR_BT_AVAILABLE">Bluetooth not available for this device.</string>
+    <string name="BT_ERROR_NO_PERMISSION">Can\'t use bluetooth with location permission, ask google?</string>
+    <string name="MAIN_BT_ERROR_SOCKET">Error connecting, please sure everything is paired.</string>
 </resources>
